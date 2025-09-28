@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./App.css";
 
-const LEADERS = ["Michelle Obama","Frida Kahlo","Marie Curie","Rosa Parks","Malala Yousafzai"];
+const LEADERS = ["Michelle Obama", "Frida Kahlo", "Marie Curie", "Rosa Parks", "Malala Yousafzai"];
 
 function App() {
   const [leader, setLeader] = useState(LEADERS[0]);
@@ -12,15 +12,14 @@ function App() {
   const sendMessage = async () => {
     if (!input) return;
     const userMsg = { sender: "You", text: input };
-    setHistory([...history, userMsg]);
     try {
       const res = await axios.post("http://localhost:8000/chat", {
         leader,
         user_input: input
       });
-      setHistory([...history, userMsg, { sender: leader, text: res.data.response }]);
+      setHistory(prev => [...prev, userMsg, { sender: leader, text: res.data.response }]);
     } catch (err) {
-      setHistory([...history, userMsg, { sender: leader, text: "Error contacting server" }]);
+      setHistory(prev => [...prev, userMsg, { sender: leader, text: "Error contacting server" }]);
     }
     setInput("");
   };
@@ -36,10 +35,15 @@ function App() {
           <p key={idx}><strong>{msg.sender}:</strong> {msg.text}</p>
         ))}
       </div>
-      <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Type your question..." />
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Type your question..."
+      />
       <button onClick={sendMessage}>Send</button>
     </div>
   );
 }
 
 export default App;
+
