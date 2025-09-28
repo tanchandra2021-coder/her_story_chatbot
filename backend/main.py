@@ -1,21 +1,20 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
+import openai
+import os
 
 app = FastAPI()
 
-# Load model once
-model_name = "EleutherAI/gpt-j-6B"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-model.eval()
+# Load API key from environment variable
+# Make sure to set OPENAI_API_KEY in your Codespace secrets
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Request body model
 class ChatRequest(BaseModel):
     leader: str
     user_input: str
 
+# Leader prompts
 LEADERS = {
     "Michelle Obama": "You are Michelle Obama, a policy-minded and empathetic mentor. Give direct finance advice.",
     "Frida Kahlo": "You are Frida Kahlo, reflective and artistic. Give finance advice using metaphors.",
@@ -30,19 +29,15 @@ def chat(request: ChatRequest):
     prompt = f"{prompt_intro}\nUser: {request.user_input}\n{request.leader}:"
     
     try:
-        inputs = tokenizer(prompt, return_tensors="pt")
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=150,
-                pad_token_id=tokenizer.eos_token_id,
-                do_sample=True,
-                temperature=0.7,
-                top_p=0.9
-            )
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        response = response.replace(prompt, "").strip()
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0.7
+        )
+        reply = response.choices[0].text.strip()
     except Exception as e:
-        response = f"Error: {e}"
+        reply = f"Error: {e}"
     
-    return {"response": response}
+    return {"response": reply}
+
